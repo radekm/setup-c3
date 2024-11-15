@@ -1,0 +1,68 @@
+name: Setup C3 Compiler
+description: Download C3 and add it to the PATH
+inputs:
+  version:
+    description: C3 version to download
+    required: true
+    default: latest
+runs:
+  using: "composite"
+  steps:
+    # TODO: Install correct LLVM version needed by C3 compiler. Currently we always install version 17.
+    #       We could install several versions but that would be slow.
+    #
+    # Current release of C3 compiler on macOS needs LLVM 17.
+    # Without it it fails when loading library `/opt/homebrew/opt/llvm@17/lib/libunwind.1.dylib`.
+    - name: Install LLVM 17 (macOS on ARM64)
+      if: runner.os == 'macOS' && runner.arch == 'ARM64'
+      shell: bash
+      run: brew install llvm@17
+    - name: Setup C3 (macOS on ARM64)
+      if: runner.os == 'macOS' && runner.arch == 'ARM64'
+      shell: bash
+      run: |
+        C3_DIR="$(mktemp -d -t c3-XXXX)"
+        cd "$C3_DIR"
+        wget -O c3.zip "https://github.com/c3lang/c3c/releases/download/${C3_VERSION}/c3-macos.zip"
+        unzip c3.zip
+        cd macos
+        chmod +x c3c
+        ls -l
+        echo "$(pwd)" >> "$GITHUB_PATH"
+      env:
+        C3_VERSION: ${{ inputs.version }}
+    - name: Setup C3 (Linux on x86_64)
+      if: runner.os == 'Linux' && runner.arch == 'X64'
+      shell: bash
+      run: |
+        C3_DIR="$(mktemp -d -t c3-XXXX)"
+        cd "$C3_DIR"
+        wget -O c3.tar.gz "https://github.com/c3lang/c3c/releases/download/${C3_VERSION}/c3-linux.tar.gz"
+        tar -xvzf c3.tar.gz
+        cd c3
+        ls -l
+        echo "$(pwd)" >> "$GITHUB_PATH"
+      env:
+        C3_VERSION: ${{ inputs.version }}
+    - name: Setup C3 (Windows on x86_64)
+      if: runner.os == 'Windows' && runner.arch == 'X64'
+      shell: bash
+      run: |
+        C3_DIR="$(mktemp -d -t c3-XXXX)"
+        cd "$C3_DIR"
+        curl -L -o c3.zip "https://github.com/c3lang/c3c/releases/download/${C3_VERSION}/c3-windows.zip"
+        unzip c3.zip
+        cd c3-windows-Release
+        ls -l
+        echo "$(pwd)" >> "$GITHUB_PATH"
+      env:
+        C3_VERSION: ${{ inputs.version }}
+    - name: Ensure that C3 compiler can find cl.exe (useful for libraries with C code) 
+      if: runner.os == 'Windows' && runner.arch == 'X64'
+      uses: ilammy/msvc-dev-cmd@v1
+    # If `link.exe` is shadowed by GNU link we have to delete GNU link.
+    # Something like this could help:
+    # - name: Prevent conflict of GNU link with Microsoft's linker
+    #   if: runner.os == 'Windows' && runner.arch == 'X64'
+    #   shell: bash
+    #   run: rm "$(where link)"
