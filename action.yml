@@ -55,6 +55,12 @@ runs:
         cd c3-windows-Release
         ls -l
         echo "$(pwd)" >> "$GITHUB_PATH"
+
+        if command -v cygpath >/dev/null 2>&1; then
+          windows_path="$(cygpath -w "$(pwd)")"
+          echo "Also adding Windows path '$windows_path' to PATH so c3c can be called from cmd"
+          echo "$windows_path" >> "$GITHUB_PATH"
+        fi
       env:
         C3_VERSION: ${{ inputs.version }}
     - name: Ensure that C3 compiler can find cl.exe (useful for libraries with C code) 
