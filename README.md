@@ -5,7 +5,7 @@ To use this action include the following step in your workflow:
 ```yaml
 - uses: radekm/setup-c3@v2
   with:
-    version: v0.6.5
+    version: v0.7.0
 ```
 
 Here's an example of a workflow:
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: radekm/setup-c3@v2
         with:
-          version: v0.6.5
+          version: v0.7.0
       - shell: bash
         run: c3c compile --lib somelib someprogram.c3
 ```
